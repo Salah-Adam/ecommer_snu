@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CheckCircle2, Loader2, Smartphone, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,10 +31,6 @@ export function PaymentDialog({ open, onOpenChange, methodId, amount, defaultPho
   const [orderId, setOrderId] = useState<string | null>(null);
   const [txn, setTxn] = useState("");
 
-  useEffect(() => {
-    if (open) { setStep("phone"); setError(undefined); }
-  }, [open]);
-
   const normalized = normalizeSomaliPhone(phone);
   const prefixOk = normalized && (method.prefixes as readonly string[]).includes(phonePrefix(normalized));
 
@@ -61,7 +57,11 @@ export function PaymentDialog({ open, onOpenChange, methodId, amount, defaultPho
   function handleOpenChange(v: boolean) {
     if (!v && (step === "sending" || step === "processing")) return; // don't close mid-payment
     onOpenChange(v);
-    if (!v && step !== "success") onClosedUnpaid?.(orderId);
+    if (!v) {
+      if (step !== "success") onClosedUnpaid?.(orderId);
+      setStep("phone");
+      setError(undefined);
+    }
   }
 
   return (
@@ -137,7 +137,7 @@ export function PaymentDialog({ open, onOpenChange, methodId, amount, defaultPho
             <p className="text-xl font-bold">Payment successful</p>
             <p className="text-sm text-muted-foreground">{formatPrice(amount)} paid via {method.name}</p>
             <p className="rounded-md bg-muted px-3 py-1 font-mono text-sm">Transaction ID: {txn}</p>
-            <Button size="lg" className="mt-2 w-full" onClick={() => { onOpenChange(false); onPaid(orderId!); }}>View my order</Button>
+            <Button size="lg" className="mt-2 w-full" onClick={() => { onOpenChange(false); setStep("phone"); onPaid(orderId!); }}>View my order</Button>
           </div>
         )}
 

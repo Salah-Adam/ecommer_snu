@@ -35,6 +35,7 @@ export function CheckoutForm({ user }: { user: { name: string; phone: string | n
   const [phone, setPhone] = useState(user.phone?.replace(/^\+252/, "") ?? "");
   const formRef = useRef<HTMLFormElement>(null);
   const orderRef = useRef<{ orderId: string; total: number } | null>(null);
+  const [placed, setPlaced] = useState<{ orderId: string; total: number } | null>(null);
 
   const subtotal = cartSubtotal(items);
   const fee = deliveryFeeFor(city, subtotal);
@@ -59,6 +60,7 @@ export function CheckoutForm({ user }: { user: { name: string; phone: string | n
       return { error: res.error };
     }
     orderRef.current = { orderId: res.orderId, total: res.total };
+    setPlaced(orderRef.current);
     clear();
     return { orderId: res.orderId };
   }
@@ -86,7 +88,7 @@ export function CheckoutForm({ user }: { user: { name: string; phone: string | n
 
   if (!mounted) return <div className="h-96 animate-pulse rounded-2xl bg-muted" />;
 
-  if (items.length === 0 && !orderRef.current) {
+  if (items.length === 0 && !placed) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed py-20 text-center">
         <ShoppingBag className="size-10 text-muted-foreground" />
@@ -211,7 +213,7 @@ export function CheckoutForm({ user }: { user: { name: string; phone: string | n
           open={payOpen}
           onOpenChange={setPayOpen}
           methodId={method}
-          amount={orderRef.current?.total ?? total}
+          amount={placed?.total ?? total}
           defaultPhone={phone}
           ensureOrder={createOrder}
           onPaid={(id) => router.push(`/orders/${id}?placed=1`)}

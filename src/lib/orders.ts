@@ -6,7 +6,8 @@ import { emails, sendEmail } from "@/lib/email";
 export const paymentLabel = (id: string) => PAYMENT_METHODS.find((m) => m.id === id)?.name ?? id;
 
 export function siteUrl() {
-  return process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+  // BETTER_AUTH_URL if set; otherwise Netlify's production URL (process.env.URL)
+  return process.env.BETTER_AUTH_URL || process.env.URL || "http://localhost:3000";
 }
 
 export async function sendOrderConfirmation(orderId: string) {
