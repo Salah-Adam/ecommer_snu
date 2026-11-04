@@ -28,7 +28,7 @@ export function deliveryFeeFor(city: string, subtotal: number) {
 }
 
 export const PAYMENT_METHODS = [
-  { id: "EVC_PLUS", name: "EVC Plus", operator: "Hormuud", prefixes: ["61", "77"], color: "#16a34a" },
+  { id: "EVC_PLUS", name: "EVC Plus", operator: "Hormuud", prefixes: ["61", "68", "77"], color: "#16a34a" },
   { id: "ZAAD", name: "ZAAD", operator: "Telesom", prefixes: ["63"], color: "#2563eb" },
   { id: "SAHAL", name: "Sahal", operator: "Golis", prefixes: ["90"], color: "#ea580c" },
   { id: "EDAHAB", name: "eDahab", operator: "Somtel", prefixes: ["62", "65", "66"], color: "#ca8a04" },

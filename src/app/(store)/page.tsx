@@ -5,6 +5,25 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
+import { ProductGrid } from "@/components/product/product-card";
+import { getHomeSections } from "@/lib/products";
+import type { ProductCardData } from "@/lib/products";
+
+function ProductSection({ title, subtitle, href, products }: { title: string; subtitle?: string; href: string; products: ProductCardData[] }) {
+  if (!products.length) return null;
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-10">
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
+          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+        </div>
+        <Link href={href} className="shrink-0 text-sm font-medium text-primary hover:underline">View all</Link>
+      </div>
+      <ProductGrid products={products} />
+    </section>
+  );
+}
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +33,14 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 export default async function HomePage() {
-  const categories = await db.category.findMany({
-    orderBy: { sortOrder: "asc" },
-    include: { _count: { select: { products: { where: { published: true } } } } },
-  });
+  const [categories, sections, brands] = await Promise.all([
+    db.category.findMany({
+      orderBy: { sortOrder: "asc" },
+      include: { _count: { select: { products: { where: { published: true } } } } },
+    }),
+    getHomeSections(),
+    db.brand.findMany({ orderBy: { products: { _count: "desc" } }, take: 12, select: { name: true, slug: true } }),
+  ]);
 
   return (
     <div>
@@ -89,6 +112,42 @@ export default async function HomePage() {
               </Link>
             );
           })}
+        </div>
+      </section>
+
+      <ProductSection title="Featured products" subtitle="Hand-picked by our team" href="/products" products={sections.featured} />
+
+      {/* Promo banners */}
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-6 md:grid-cols-2">
+        <Link href="/products?category=laptops" className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-violet-600 p-8 text-primary-foreground">
+          <p className="text-sm font-medium opacity-80">For students & professionals</p>
+          <h3 className="mt-1 text-3xl font-bold">Laptops from $899</h3>
+          <p className="mt-2 max-w-xs text-sm opacity-90">MacBook, Dell XPS, Lenovo Yoga and more — with 1 year warranty.</p>
+          <span className="mt-6 inline-flex items-center gap-1 text-sm font-semibold">Shop laptops <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
+          <Laptop className="absolute -right-6 -bottom-6 size-40 opacity-15" />
+        </Link>
+        <Link href="/products?category=memory-ram" className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-700 p-8 text-white">
+          <p className="text-sm font-medium opacity-80">Make your old PC fast again</p>
+          <h3 className="mt-1 text-3xl font-bold">RAM & SSD upgrades</h3>
+          <p className="mt-2 max-w-xs text-sm opacity-90">SSDs from $35 and RAM from $29. The cheapest speed boost you can buy.</p>
+          <span className="mt-6 inline-flex items-center gap-1 text-sm font-semibold">Upgrade now <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
+          <MemoryStick className="absolute -right-6 -bottom-6 size-40 opacity-15" />
+        </Link>
+      </section>
+
+      <ProductSection title="Best sellers" subtitle="What customers in Somalia are buying" href="/products?sort=popular" products={sections.bestSellers} />
+      <ProductSection title="Hot deals" subtitle="Limited-time discounts" href="/products?sort=popular" products={sections.deals} />
+      <ProductSection title="New arrivals" subtitle="Fresh in stock" href="/products?sort=newest" products={sections.newArrivals} />
+
+      {/* Brands */}
+      <section className="mx-auto max-w-7xl px-4 py-10">
+        <h2 className="mb-6 text-center text-sm font-semibold tracking-widest text-muted-foreground uppercase">Top brands</h2>
+        <div className="flex flex-wrap justify-center gap-2">
+          {brands.map((b) => (
+            <Link key={b.slug} href={`/products?brand=${b.slug}`} className="rounded-full border px-5 py-2 text-sm font-semibold transition-colors hover:border-primary hover:text-primary">
+              {b.name}
+            </Link>
+          ))}
         </div>
       </section>
     </div>

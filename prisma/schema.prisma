@@ -194,3 +194,18 @@ model OrderItem {
 
   @@index([orderId])
 }
+
+// ---------- Contact ----------
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
