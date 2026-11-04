@@ -7,3 +7,7 @@
 [build.environment]
   NODE_VERSION = "22"
   NPM_FLAGS = "--no-audit --no-fund"
+  # These are public values (site URL, sender address, public image bucket),
+  # not secrets — don't fail the build when they appear in code or bundles.
+  # Real secrets (DATABASE_URL, BETTER_AUTH_SECRET, BREVO_API_KEY, R2 keys) are still scanned.
+  SECRETS_SCAN_OMIT_KEYS = "BETTER_AUTH_URL,EMAIL_FROM,R2_PUBLIC_URL,R2_BUCKET,R2_ACCOUNT_ID"
