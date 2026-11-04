@@ -1,4 +1,4 @@
-// OnlineTech — PostgreSQL schema
+// somStore — PostgreSQL schema
 
 generator client {
   provider = "prisma-client"

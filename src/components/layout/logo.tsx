@@ -9,7 +9,7 @@ export function Logo({ className }: { className?: string }) {
         <Zap className="size-4.5" fill="currentColor" />
       </span>
       <span className="text-lg">
-        Online<span className="text-primary">Tech</span>
+        som<span className="text-primary">Store</span>
       </span>
     </Link>
   );

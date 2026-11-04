@@ -56,7 +56,7 @@ export const useCart = create<CartState>()(
       remove: (productId) => set((s) => ({ items: s.items.filter((i) => i.productId !== productId) })),
       clear: () => set({ items: [] }),
     }),
-    { name: "onlinetech-cart", partialize: (s) => ({ items: s.items }) }
+    { name: "somstore-cart", partialize: (s) => ({ items: s.items }) }
   )
 );
 

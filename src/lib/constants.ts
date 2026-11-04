@@ -1,10 +1,10 @@
 export const STORE = {
-  name: "OnlineTech",
+  name: "somStore",
   tagline: "Somalia's home of genuine electronics",
   description:
     "Shop laptops, smartphones, tablets, components and accessories with fast delivery across Somalia. Pay with EVC Plus, ZAAD, Sahal, eDahab or cash on delivery.",
   phone: "+252 61 000 0000",
-  email: "support@onlinetech.so",
+  email: "support@somstore.so",
   address: "Maka Al-Mukarama Road, Mogadishu, Somalia",
 };
 

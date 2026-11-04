@@ -307,9 +307,9 @@ async function main() {
   }
 
   console.log("Users…");
-  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@onlinetech.so";
+  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@somstore.so";
   const adminPassword = process.env.ADMIN_PASSWORD ?? "ChangeMe-Admin-2026";
-  const customerEmail = process.env.DEMO_CUSTOMER_EMAIL ?? "customer@onlinetech.so";
+  const customerEmail = process.env.DEMO_CUSTOMER_EMAIL ?? "customer@somstore.so";
   const customerPassword = process.env.DEMO_CUSTOMER_PASSWORD ?? "ChangeMe-Customer-2026";
 
   async function upsertUser(email: string, password: string, name: string, role: "ADMIN" | "CUSTOMER", phone: string) {
@@ -324,7 +324,7 @@ async function main() {
     });
     return user;
   }
-  await upsertUser(adminEmail, adminPassword, "OnlineTech Admin", "ADMIN", "+252610000001");
+  await upsertUser(adminEmail, adminPassword, "somStore Admin", "ADMIN", "+252610000001");
   const customer = await upsertUser(customerEmail, customerPassword, "Amina Hassan", "CUSTOMER", "+252615550123");
 
   console.log("Sample orders for the dashboard…");
