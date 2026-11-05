@@ -4,8 +4,19 @@ import { formatPrice } from "@/lib/format";
 
 type Mail = { to: string; name?: string; subject: string; html: string };
 
-/** Sends email through Brevo's API. Falls back to logging in development when no key is set. */
+/** Sends email via Gmail SMTP if configured, otherwise Brevo's API; logs in development when neither is set. */
 export async function sendEmail({ to, name, subject, html }: Mail) {
+  const gUser = process.env.GMAIL_USER, gPass = process.env.GMAIL_APP_PASSWORD;
+  if (gUser && gPass) {
+    const nodemailer = await import("nodemailer");
+    const transport = nodemailer.createTransport({ service: "gmail", auth: { user: gUser, pass: gPass.replace(/\s/g, "") } });
+    try {
+      await transport.sendMail({ from: `"${STORE.name}" <${gUser}>`, to: name ? `"${name}" <${to}>` : to, subject, html });
+    } catch (e) {
+      console.error("[email] Gmail error", e);
+    }
+    return;
+  }
   const apiKey = process.env.BREVO_API_KEY;
   const from = process.env.EMAIL_FROM;
   if (!apiKey || !from) {
