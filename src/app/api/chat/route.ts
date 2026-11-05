@@ -22,16 +22,19 @@ Only recommend products from this catalog (slug | name | brand | category | pric
 ${catalog}
 Rules: answer briefly (max 4 sentences), reply in the user's language (Somali or English), respect the user's budget, never invent products or prices. When you recommend products, add their slugs at the very end like [[slug-1]] [[slug-2]] (max 3). Politely decline unrelated topics.`;
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL || "gemini-flash-latest"}:generateContent`,
-    {
+  // Try fast model first; fall back if Google reports overload or an error.
+  const models = [process.env.GEMINI_MODEL, "gemini-flash-lite-latest", "gemini-flash-latest"].filter(Boolean) as string[];
+  let res: Response | null = null;
+  for (const model of models) {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: history, generationConfig: { temperature: 0.4, maxOutputTokens: 800, thinkingConfig: { thinkingBudget: 0 } } }),
-    }
-  );
-  if (!res.ok) {
-    console.error("[chat]", res.status, await res.text());
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: history, generationConfig: { temperature: 0.4, maxOutputTokens: 1024 } }),
+    });
+    if (res.ok) break;
+    console.error("[chat]", model, res.status, (await res.text()).slice(0, 200));
+  }
+  if (!res?.ok) {
     return Response.json({ text: "Sorry, I'm having trouble right now. Please try again in a moment.", products: [] });
   }
   const data = await res.json();
