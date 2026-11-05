@@ -4,7 +4,7 @@ type Msg = { role: "user" | "assistant"; text: string };
 
 export async function POST(req: Request) {
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return Response.json({ text: "The assistant is not configured yet.", products: [] });
+  if (!key && !process.env.GROQ_API_KEY) return Response.json({ text: "The assistant is not configured yet.", products: [] });
 
   const { messages } = (await req.json()) as { messages: Msg[] };
   const history = (messages ?? []).slice(-10).map((m) => ({ role: m.role === "user" ? "user" : "model", parts: [{ text: String(m.text).slice(0, 1000) }] }));
@@ -22,23 +22,9 @@ Only recommend products from this catalog (slug | name | brand | category | pric
 ${catalog}
 Rules: answer briefly (max 4 sentences), reply in the user's language (Somali or English), respect the user's budget, never invent products or prices. When you recommend products, add their slugs at the very end like [[slug-1]] [[slug-2]] (max 3). Politely decline unrelated topics.`;
 
-  // Try fast model first; fall back if Google reports overload or an error.
-  const models = [process.env.GEMINI_MODEL, "gemini-flash-lite-latest", "gemini-flash-latest"].filter(Boolean) as string[];
-  let res: Response | null = null;
-  for (const model of models) {
-    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: history, generationConfig: { temperature: 0.4, maxOutputTokens: 1024 } }),
-    });
-    if (res.ok) break;
-    console.error("[chat]", model, res.status, (await res.text()).slice(0, 200));
-  }
-  if (!res?.ok) {
-    return Response.json({ text: "Sorry, I'm having trouble right now. Please try again in a moment.", products: [] });
-  }
-  const data = await res.json();
-  const raw: string = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+  const raw = (await askGroq(system, messages ?? [])) ?? (key ? await askGemini(key, system, history) : null);
+  if (raw == null) return Response.json({ text: "Sorry, I'm having trouble right now. Please try again in a moment.", products: [] });
+
   const slugs = [...raw.matchAll(/\[\[([a-z0-9-]+)\]\]/g)].map((m) => m[1]);
   const picks = slugs
     .map((s) => products.find((p) => p.slug === s))
@@ -48,4 +34,41 @@ Rules: answer briefly (max 4 sentences), reply in the user's language (Somali or
 
   const text = raw.replace(/\[\[[a-z0-9-]+\]\]/g, "").trim();
   return Response.json({ text: text || "Could you tell me a bit more about what you need and your budget?", products: picks });
+}
+
+/** Groq (fast, OpenAI-compatible). Returns null on failure so Gemini can take over. */
+async function askGroq(system: string, messages: Msg[]): Promise<string | null> {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) return null;
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+      reasoning_effort: "low",
+      temperature: 0.4,
+      max_tokens: 1024,
+      messages: [{ role: "system", content: system }, ...messages.slice(-10).map((m) => ({ role: m.role, content: String(m.text).slice(0, 1000) }))],
+    }),
+  });
+  if (!res.ok) { console.error("[chat] groq", res.status, (await res.text()).slice(0, 200)); return null; }
+  const text: string = (await res.json()).choices?.[0]?.message?.content ?? "";
+  return text.trim() ? text : null;
+}
+
+/** Gemini backup with model fallback. */
+async function askGemini(key: string, system: string, history: unknown[]): Promise<string | null> {
+  for (const model of [process.env.GEMINI_MODEL, "gemini-flash-lite-latest", "gemini-flash-latest"].filter(Boolean)) {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: history, generationConfig: { temperature: 0.4, maxOutputTokens: 1024 } }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+    }
+    console.error("[chat] gemini", model, res.status);
+  }
+  return null;
 }
