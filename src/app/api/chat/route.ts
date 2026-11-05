@@ -27,7 +27,7 @@ Rules: answer briefly (max 4 sentences), reply in the user's language (Somali or
     {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: history, generationConfig: { temperature: 0.4, maxOutputTokens: 400 } }),
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents: history, generationConfig: { temperature: 0.4, maxOutputTokens: 800, thinkingConfig: { thinkingBudget: 0 } } }),
     }
   );
   if (!res.ok) {
@@ -43,5 +43,6 @@ Rules: answer briefly (max 4 sentences), reply in the user's language (Somali or
     .slice(0, 3)
     .map((p) => ({ slug: p.slug, name: p.name, price: Number(p.price), image: p.images[0] ?? "" }));
 
-  return Response.json({ text: raw.replace(/\[\[[a-z0-9-]+\]\]/g, "").trim(), products: picks });
+  const text = raw.replace(/\[\[[a-z0-9-]+\]\]/g, "").trim();
+  return Response.json({ text: text || "Could you tell me a bit more about what you need and your budget?", products: picks });
 }
