@@ -32,7 +32,7 @@ Rules: answer briefly (max 4 sentences), reply in the user's language (Somali or
     .slice(0, 3)
     .map((p) => ({ slug: p.slug, name: p.name, price: Number(p.price), image: p.images[0] ?? "" }));
 
-  const text = raw.replace(/\[\[[a-z0-9-]+\]\]/g, "").trim();
+  const text = raw.replace(/\[\[[a-z0-9-]+\]\]/g, "").replace(/\*\*|__/g, "").trim();
   return Response.json({ text: text || "Could you tell me a bit more about what you need and your budget?", products: picks });
 }
 
